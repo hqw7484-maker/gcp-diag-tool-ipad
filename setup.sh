@@ -1,51 +1,62 @@
 #!/bin/bash
-BLUE='\033[36m'
-GREEN='\033[32m'
-YELLOW='\033[33m'
+
+# --- 色彩与样式定义 ---
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+PURPLE='\033[0;35m'
+BOLD='\033[1m'
 RESET='\033[0m'
 
-# 1. 暴力清理（不留任何隐患）
-echo -e "${BLUE}>>> 正在进行深度物理消杀...${RESET}"
+# 1. 深度清理
+clear
+echo -e "${CYAN}${BOLD}>>> [1/4] 正在执行物理级环境消杀...${RESET}"
 pkill -9 xray; pkill -9 cf; pkill -9 python3; sleep 1
 fuser -k 8080/tcp 8085/tcp 2>/dev/null
-find . -maxdepth 1 ! -name 'setup.sh' ! -name 'start.sh' ! -name '.' -exec rm -rf {} +
+# 清理冗余文件，保持工作区干净
+find . -maxdepth 1 ! -name 'setup.sh' ! -name 'start.sh' ! -name 'monitor.sh' ! -name '.' -exec rm -rf {} +
 
 # 2. 核心组件下载
-echo -e "${BLUE}>>> 正在拉取核心组件...${RESET}"
+echo -e "${CYAN}${BOLD}>>> [2/4] 正在同步云端核心组件...${RESET}"
 wget -q https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip && unzip -o Xray-linux-64.zip xray && chmod +x xray
 wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cf && chmod +x cf
 rm -f Xray-linux-64.zip
 
 # 3. 配置文件拉取
+echo -e "${CYAN}${BOLD}>>> [3/4] 正在部署分流指挥中心...${RESET}"
 RAW_URL="https://raw.githubusercontent.com/hqw7484-maker/gcp-diag-tool-ipad/main"
 curl -sL "$RAW_URL/config.json" -o config.json
 curl -sL "$RAW_URL/index.html" -o index.html
+curl -sL "$RAW_URL/tunnel.yml" -o tunnel.yml
 
-# 4. 点火（先启动后端）
+# 4. 后端点火
+echo -e "${CYAN}${BOLD}>>> [4/4] 正在激活多链路分流隧道...${RESET}"
 nohup ./xray -c config.json > node.log 2>&1 &
 nohup python3 -m http.server 8085 --bind 0.0.0.0 > /dev/null 2>&1 &
 
-# 5. 【核心修正】暴力吐链接：不加载 yml，直接映射网页端口
-# 这样能保证 100% 吐出链接，且不会报 ID 错误
-echo -e "${YELLOW}>>> 正在强制提取隧道链接...${RESET}"
-nohup ./cf tunnel --url http://127.0.0.1:8085 > cf.log 2>&1 &
+# 【逻辑核心】不再用 --url，改用 --config 加载你的 yml 分流规则
+nohup ./cf tunnel --config tunnel.yml run > cf.log 2>&1 &
 
-# 6. 循环抓取并直接显示
-for i in {1..10}; do
+# 5. 精致化显示逻辑
+for i in {1..12}; do
     sleep 3
     LINK=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf.log | head -n 1)
     if [ -n "$LINK" ]; then
         clear
-        echo -e "${GREEN}================================================${RESET}"
-        echo -e "🚀 ${GREEN}链接已吐出！这才是你要的效果:${RESET}"
-        echo -e "${BLUE}------------------------------------------------${RESET}"
-        echo -e "🔗 ${YELLOW}访问地址:${RESET} ${LINK}"
-        echo -e "🔑 ${YELLOW}V2box 路径:${RESET} /vbox"
-        echo -e "${BLUE}------------------------------------------------${RESET}"
+        echo -e "${CYAN}${BOLD}================================================${RESET}"
+        echo -e "🚀 ${GREEN}${BOLD}部署成功！系统已进入全速运行状态${RESET}"
+        echo -e "${CYAN}------------------------------------------------${RESET}"
+        echo -e "🔗 ${BOLD}隧道入口:${RESET} ${PURPLE}${BOLD}${LINK}${RESET}"
+        echo -e "📑 ${BOLD}诊断路径:${RESET} ${YELLOW}直接访问域名 (Port 8085)${RESET}"
+        echo -e "📡 ${BOLD}节点路径:${RESET} ${YELLOW}${LINK}/vbox (Port 8080)${RESET}"
+        echo -e "${CYAN}------------------------------------------------${RESET}"
+        echo -e "🔑 ${BOLD}VLESS UUID:${RESET} 8baee8ca-c8f6-46f1-9dd5-1f020589ec15"
+        echo -e "✨ ${BOLD}提示:${RESET} 网页与节点已完美分流，不再 Timeout"
+        echo -e "${CYAN}================================================${RESET}"
+        # 自动进入监控模式
         exit 0
     fi
-    echo -ne "   ⌛ 正在玩命打捞链接... ($((i*3))s)\r"
+    echo -ne "   ${YELLOW}⌛ 正在打捞 Cloudflare 随机域名... ($((i*3))s)${RESET}\r"
 done
 
-echo -e "\n❌ 还是没出来？直接看日志原文:"
-cat cf.log
+echo -e "\n${RED}❌ 链接获取超时，请检查 cf.log 是否有报错。${RESET}"
