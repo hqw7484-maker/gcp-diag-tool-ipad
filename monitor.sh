@@ -24,10 +24,13 @@ for i in {1..540}
 do
     PERCENT=$(( i * 100 / 540 ))
     BAR=$(printf "%0.s#" $(seq 1 $((PERCENT / 5))))
-    # 指示作用检测
-    if pgrep -x "xray" > /dev/null; then STATUS="${GREEN}ONLINE${RESET}"; else STATUS="\033[31mOFFLINE${RESET}"; fi
-    
-    printf "\r %-10s | [%-20s] %d%% | %d/540min | %s " "$STATUS" "$BAR" "$PERCENT" "$i" "$(date '+%H:%M')"
+    # 指示性监测：Xray 是唯一的流量总闸
+    if pgrep -x "xray" > /dev/null; then
+        STATUS="${GREEN}ONLINE${RESET}"
+    else
+        STATUS="\033[31mOFFLINE${RESET}"
+    fi
+    printf "\r %-10s | [%-20s] %d%% | %d/540min | %s" "$STATUS" "$BAR" "$PERCENT" "$i" "$(date '+%H:%M')"
     [ $((i%5)) -eq 0 ] && echo "" 
     touch .keep_alive
     sleep 60
