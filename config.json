@@ -2,7 +2,6 @@
   "log": {
     "loglevel": "warning"
   },
-
   "inbounds": [
     {
       "port": 8080,
@@ -13,16 +12,8 @@
             "id": "8baee8ca-c8f6-46f1-9dd5-1f020589ec15"
           }
         ],
-        "decryption": "none",
-
-        "fallbacks": [
-          {
-            "path": "/",
-            "dest": 8085
-          }
-        ]
+        "decryption": "none"
       },
-
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
@@ -31,7 +22,6 @@
       }
     }
   ],
-
   "outbounds": [
     {
       "protocol": "freedom"
