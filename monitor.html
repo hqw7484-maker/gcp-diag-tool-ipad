@@ -1,156 +1,46 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GCS | 核心诊断中枢</title>
+    <title>GCP Diagnostic Tool v2.1</title>
     <style>
-        :root {
-            --neon-blue: #00d2ff;
-            --neon-green: #39ff14;
-            --bg-dark: #0a0b10;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-        }
-        body {
-            background: var(--bg-dark);
-            color: #fff;
-            font-family: 'SF Pro Display', -apple-system, system-ui, sans-serif;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            background: radial-gradient(circle at center, #1a1c2c 0%, #0a0b10 100%);
-        }
-        /* 背景流光动画 */
-        body::before {
-            content: "";
-            position: absolute;
-            width: 150%; height: 150%;
-            background: conic-gradient(from 180deg at 50% 50%, var(--neon-blue) 0deg, transparent 90deg, var(--neon-blue) 180deg, transparent 270deg);
-            animation: rotate 15s linear infinite;
-            opacity: 0.05;
-        }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        .glass-panel {
-            position: relative;
-            z-index: 10;
-            width: 90%;
-            max-width: 500px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .status-pill {
-            background: rgba(57, 255, 20, 0.1);
-            border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            padding: 4px 12px;
-            border-radius: 100px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .stat-card {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .label { color: #636e72; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 8px; }
-        .value { font-size: 1.4rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
-
-        .terminal-log {
-            margin-top: 25px;
-            background: #000;
-            border-radius: 12px;
-            padding: 15px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: #00d2ff;
-            height: 80px;
-            overflow-y: hidden;
-            border: 1px solid rgba(0, 210, 255, 0.2);
-        }
-
-        .cursor { animation: blink 1s infinite; border-left: 6px solid var(--neon-blue); margin-left: 5px; }
-        @keyframes blink { 50% { opacity: 0; } }
+        :root { --main-blue: #3b82f6; --bg-dark: #0f172a; --panel-bg: #ffffff; }
+        body { background: var(--bg-dark); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; color: #334155; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; color: #fff; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .card { background: var(--panel-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .card h3 { margin: 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; }
+        .card .value { font-size: 32px; font-weight: bold; margin: 10px 0; color: #1e293b; }
+        .card .sub { font-size: 12px; color: #64748b; }
+        .console { background: #1e293b; color: #cbd5e1; padding: 15px; border-radius: 8px; margin-top: 20px; font-family: monospace; font-size: 13px; line-height: 1.6; }
+        .status-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body>
-    <div class="glass-panel">
-        <div class="header">
-            <div style="font-size: 1.2rem; font-weight: 800;">CORE <span style="color: var(--neon-blue);">DX-2.0</span></div>
-            <div class="status-badge"><span class="status-pill">● System Active</span></div>
-        </div>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="label">Location</div>
-                <div class="value" id="loc">Detecting...</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Tunnel Latency</div>
-                <div class="value" style="color: var(--neon-blue);">24<span style="font-size: 0.8rem;">ms</span></div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Core Load</div>
-                <div class="value" id="cpu">0.12%</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Uptime</div>
-                <div class="value" id="timer">00:00:00</div>
-            </div>
-        </div>
-
-        <div class="terminal-log">
-            > INITIALIZING XRAY CORE... [DONE]<br>
-            > TUNNEL ESTABLISHED AT ATLANTA EDGE...<br>
-            > <span style="color: #fff;">READY FOR INCOMING TRAFFIC</span><span class="cursor"></span>
-        </div>
+    <div class="header">
+        <div style="font-weight: bold;">Diagnostic Panel</div>
+        <div style="font-size: 12px; color: #22c55e;"><span class="status-dot"></span>ONLINE</div>
     </div>
-
+    <div class="grid">
+        <div class="card"><h3>System Health</h3><div class="value">100<span style="font-size: 14px; color: #94a3b8;">/100</span></div><div class="sub">All components functioning normally.</div></div>
+        <div class="card"><h3>CPU Utilization</h3><div class="value" id="cpu">0.08%</div><div class="sub">Currently Idle (vCPU Core 1)</div></div>
+        <div class="card"><h3>Memory Free</h3><div class="value" id="mem">3.67<span style="font-size: 14px; color: #94a3b8;">GB</span></div><div class="sub">GCP Instance Standard-1</div></div>
+    </div>
+    <div class="console">
+        <div>[<span id="clock"></span>] System Diagnosis Initiated...</div>
+        <div>[System] Kernel version: linux-5.15.0-gcp</div>
+        <div>[System] WebSocket ingress listener: <span style="color: #3b82f6;">0.0.0.0:8080</span></div>
+        <div>[HTTP] Internal server (PID 8085) bound: <span style="color: #3b82f6;">127.0.0.1</span></div>
+        <div style="margin-top: 10px; color: #94a3b8;">GCP Diagnostic Tool v2.1 | Telemetry Port: 8080 | System Ref: hughes-wheat-due-wife</div>
+    </div>
     <script>
-        // 模拟位置检测
-        document.getElementById('loc').innerText = "Atlanta (GCP)";
-        
-        // 动态计时器
-        let sec = 0;
-        setInterval(() => {
-            sec++;
-            let h = Math.floor(sec / 3600).toString().padStart(2, '0');
-            let m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
-            let s = (sec % 60).toString().padStart(2, '0');
-            document.getElementById('timer').innerText = `${h}:${m}:${s}`;
-        }, 1000);
-
-        // 模拟CPU波动
-        setInterval(() => {
-            document.getElementById('cpu').innerText = (Math.random() * 0.5 + 0.1).toFixed(2) + "%";
-        }, 3000);
+        function update() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+            // 这里可以通过 fetch 一个后端接口获取真实数据，目前模拟你的截图
+            document.getElementById('cpu').innerText = (Math.random() * 0.5).toFixed(2) + "%";
+        }
+        setInterval(update, 1000); update();
     </script>
 </body>
 </html>
