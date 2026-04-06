@@ -1,0 +1,16 @@
+{
+    "inbounds": [{
+        "listen": "0.0.0.0",
+        "port": 8080,
+        "protocol": "vless",
+        "settings": {
+            "clients": [{"id": "8baee8ca-c8f6-46f1-9dd5-1f020589ec15"}],
+            "decryption": "none"
+        },
+        "streamSettings": {
+            "network": "ws",
+            "wsSettings": {"path": "/vbox"}
+        }
+    }],
+    "outbounds": [{"protocol": "freedom"}]
+}
