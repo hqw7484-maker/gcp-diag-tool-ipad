@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Node Monitor</title>
+<style>
+body {
+    margin:0;
+    background:#0f172a;
+    color:#0ff;
+    font-family:monospace;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+.panel {
+    border:1px solid #0ff;
+    padding:30px;
+    width:400px;
+    box-shadow:0 0 20px #0ff;
+}
+h1 {
+    text-align:center;
+}
+.status {
+    font-size:20px;
+    margin-top:20px;
+}
+.online { color:#0f0; }
+.offline { color:#f00; }
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+<h1>NODE STATUS</h1>
+
+<div class="status">Checking...</div>
+
+<div id="url"></div>
+</div>
+
+<script src="env.js"></script>
+<script>
+const status = document.querySelector('.status');
+const urlBox = document.getElementById('url');
+
+urlBox.innerText = window.NODE_URL || "No node";
+
+function check() {
+    fetch(window.NODE_URL, {mode:"no-cors"})
+    .then(()=>{
+        status.innerHTML = "<span class='online'>ONLINE</span>";
+    })
+    .catch(()=>{
+        status.innerHTML = "<span class='offline'>OFFLINE</span>";
+    });
+}
+
+setInterval(check, 3000);
+check();
+</script>
+
+</body>
+</html>
