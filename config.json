@@ -1,17 +1,40 @@
 {
-    "log": { "access": "/dev/null", "error": "/dev/null", "loglevel": "warning" },
-    "inbounds": [{
-        "port": 8080,
-        "protocol": "vless",
-        "settings": {
-            "clients": [{"id": "8baee8ca-c8f6-46f1-9dd5-1f020589ec15"}],
-            "decryption": "none",
-            "fallbacks": [{ "dest": 8085 }]
-        },
-        "streamSettings": {
-            "network": "ws",
-            "wsSettings": { "path": "/vbox" }
+  "log": {
+    "loglevel": "warning"
+  },
+
+  "inbounds": [
+    {
+      "port": 8080,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "8baee8ca-c8f6-46f1-9dd5-1f020589ec15"
+          }
+        ],
+        "decryption": "none",
+
+        "fallbacks": [
+          {
+            "path": "/",
+            "dest": 8085
+          }
+        ]
+      },
+
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vbox"
         }
-    }],
-    "outbounds": [{ "protocol": "freedom" }]
+      }
+    }
+  ],
+
+  "outbounds": [
+    {
+      "protocol": "freedom"
+    }
+  ]
 }
