@@ -6,7 +6,11 @@
         "settings": {
             "clients": [{"id": "8baee8ca-c8f6-46f1-9dd5-1f020589ec15"}],
             "decryption": "none",
-            "fallbacks": [{"dest": 8085}]
+            "fallbacks": [
+                {
+                    "dest": "127.0.0.1:8085"
+                }
+            ]
         },
         "streamSettings": {
             "network": "ws",
