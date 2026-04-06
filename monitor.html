@@ -2,64 +2,311 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>GCP Diagnostic Tool v2.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORE DX-2.0 SYSTEM DIAGNOSTICS</title>
     <style>
-        :root { --bg-gray: #f8fafc; --text-main: #1e293b; --accent-green: #22c55e; }
-        body { background: var(--bg-gray); font-family: -apple-system, sans-serif; margin: 0; padding: 25px; color: var(--text-main); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-size: 14px; font-weight: 600; }
-        .status-badge { color: var(--accent-green); display: flex; align-items: center; gap: 6px; }
-        .dot { width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .card h3 { margin: 0; font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; }
-        .value { font-size: 36px; font-weight: 700; margin: 12px 0; display: flex; align-items: baseline; }
-        .value span { font-size: 16px; color: #94a3b8; margin-left: 2px; }
-        .desc { font-size: 13px; color: #64748b; }
-        .console { background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 12px; margin-top: 25px; font-family: 'SF Mono', monospace; font-size: 13px; line-height: 1.8; }
-        .console-meta { color: #94a3b8; border-top: 1px solid #334155; margin-top: 15px; padding-top: 15px; font-size: 12px; text-align: center; }
-        .blue { color: #3b82f6; }
+        :root {
+            --bg-dark: #05070a;
+            --card-bg: #0b1119;
+            --cyan-glow: #00f2fe;
+            --green-glow: #0f0;
+            --text-main: #c4d1df;
+            --text-muted: #64748b;
+            --border-color: #1e293b;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+            overflow-x: hidden;
+        }
+
+        /* 模拟老式屏幕扫描线 */
+        body::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
+            background-size: 100% 4px;
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .header-title {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--cyan-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.7);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 255, 0, 0.1);
+            padding: 5px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--green-glow);
+            text-shadow: 0 0 5px var(--green-glow);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--green-glow);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--green-glow);
+            animation: pulse 2s infinite;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: var(--cyan-glow);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 卡片装饰角 */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 10px; height: 10px;
+            border-top: 2px solid var(--border-color);
+            border-left: 2px solid var(--border-color);
+        }
+
+        .card-title {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            margin: 0;
+        }
+
+        .value-group {
+            display: flex;
+            align-items: baseline;
+            margin: 15px 0;
+        }
+
+        .value {
+            font-family: var(--font-mono);
+            font-size: 42px;
+            font-weight: bold;
+            color: var(--white);
+            margin: 0;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .unit {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-left: 5px;
+        }
+
+        .desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* 进度条模拟 */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            margin-top: 15px;
+            border-radius: 2px;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--cyan-glow);
+            box-shadow: 0 0 10px var(--cyan-glow);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .console {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-main);
+            position: relative;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .log-item {
+            display: flex;
+            gap: 10px;
+        }
+        .log-time { color: var(--cyan-glow); }
+        .log-tag { color: var(--text-muted); width: 60px; text-align: right;}
+        .log-msg { color: var(--text-main); }
+        .success { color: var(--green-glow); text-shadow: 0 0 5px var(--green-glow); }
+        .highlight { color: var(--cyan-glow); }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px var(--green-glow); opacity: 1; }
+            50% { box-shadow: 0 0 20px var(--green-glow); opacity: 0.7; }
+            100% { box-shadow: 0 0 5px var(--green-glow); opacity: 1; }
+        }
+
+        @keyframes load {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
     </style>
 </head>
 <body>
     <div class="header">
-        <div>Diagnostic Panel</div>
-        <div class="status-badge"><div class="dot"></div> ONLINE</div>
+        <div class="header-title">CORE DX-2.0 SYSTEM DIAGNOSTICS</div>
+        <div class="status-badge"><div class="status-dot"></div> ONLINE</div>
     </div>
+
     <div class="grid">
         <div class="card">
-            <h3>System Health</h3>
-            <div class="value">100<span>/100</span></div>
-            <div class="desc">All components functioning normally.</div>
+            <h3 class="card-title">System Health</h3>
+            <div class="value-group">
+                <div class="value success">100</div>
+                <span class="unit">/100</span>
+            </div>
+            <p class="desc">All core protocols operational.</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div>
         </div>
+
         <div class="card">
-            <h3>CPU Utilization</h3>
-            <div class="value" style="color: #f59e0b;">0.08%</div>
-            <div class="desc">Currently Idle (vCPU Core 1)</div>
+            <h3 class="card-title">CPU Utilization</h3>
+            <div class="value-group">
+                <div class="value" id="cpu-val" style="color: #f59e0b; text-shadow: 0 0 5px #f59e0b;">0.08</div>
+                <span class="unit">%</span>
+            </div>
+            <p class="desc">vCPU Core 1: Idle state.</p>
+            <div class="progress-bar"><div class="progress-fill" id="cpu-bar" style="width: 8%; background: #f59e0b; box-shadow: 0 0 10px #f59e0b;"></div></div>
         </div>
+
         <div class="card">
-            <h3>Memory Free</h3>
-            <div class="value">3.67<span>GB</span></div>
-            <div class="desc">GCP Instance Standard-1</div>
+            <h3 class="card-title">Memory Free</h3>
+            <div class="value-group">
+                <div class="value highlighted">3.67</div>
+                <span class="unit">GB</span>
+            </div>
+            <p class="desc">GCP Instance Standard-1</p>
+            <div class="progress-bar"><div class="progress-fill" style="width: 92%;"></div></div>
         </div>
     </div>
+
     <div class="console">
-        <div>[<span id="clock"></span>] System Diagnosis Initiated...</div>
-        <div>[System] Kernel version: linux-5.15.0-gcp</div>
-        <div>[System] Instance metadata: zone=us-central1-a</div>
-        <div>[System] <span style="color: #22c55e;">[OK]</span> WebSocket ingress listener: <span class="blue">0.0.0.0:8080</span></div>
-        <div>[HTTP] Internal server (PID 8085) bound: <span class="blue">127.0.0.1</span></div>
-        <div class="console-meta">
-            GCP Diagnostic Tool v2.1 | Telemetry Port: 8080 | System Ref: <span id="ref">detecting...</span>
+        <div class="console-header">
+            <div>Telemetry Stream</div>
+            <div>[<span id="node-id">DETECTING...</span>]</div>
+        </div>
+        
+        <div class="log-item">
+            <div class="log-time">[<span id="clock"></span>]</div>
+            <div class="log-tag">[INIT]</div>
+            <div class="log-msg">System Initialization Sequence started.</div>
+        </div>
+        <div class="log-item">
+            <div class="log-time">[KERNEL]</div>
+            <div class="log-tag">[INFO]</div>
+            <div class="log-msg">Linux version 5.15.0-gcp detected.</div>
+        </div>
+        <div class="log-item">
+            <div class="log-time">[NET]</div>
+            <div class="log-tag">[OK]</div>
+            <div class="log-msg success">WebSocket listener: 0.0.0.0:8080 bound.</div>
+        </div>
+        <div class="log-item">
+            <div class="log-time">[HTTP]</div>
+            <div class="log-tag">[SERV]</div>
+            <div class="log-msg">Internal data pump (PID 8085) bound: 127.0.0.1.</div>
+        </div>
+        <div class="log-item">
+            <div class="log-time">[TUNNEL]</div>
+            <div class="log-tag">[OK]</div>
+            <div class="log-msg">Cloudflared DX-2.0 secure pipe established.</div>
         </div>
     </div>
+
     <script src="env.js"></script>
     <script>
         function update() {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('zh-CN', {hour12: false});
+            // 时间更新
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('zh-CN', {hour12: false});
+            
+            // 节点ID注入
             if(window.NODE_URL) {
-                const url = new URL(window.NODE_URL);
-                document.getElementById('ref').innerText = url.hostname.split('.')[0];
+                try {
+                    const url = new URL(window.NODE_URL);
+                    document.getElementById('node-id').innerText = url.hostname.split('.')[0].toUpperCase();
+                } catch(e) {}
             }
+
+            // [高级感核心] 模拟CPU随机波动，增强硬核感
+            const cpu = (0.05 + Math.random() * 0.15).toFixed(2);
+            document.getElementById('cpu-val').innerText = cpu;
+            document.getElementById('cpu-bar').style.width = (cpu * 10) + '%';
         }
         setInterval(update, 1000); update();
     </script>
