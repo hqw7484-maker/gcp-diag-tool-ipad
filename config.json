@@ -10,7 +10,7 @@
         },
         "streamSettings": {
             "network": "ws",
-            "wsSettings": { "path": "/vbox" }
+            "wsSettings": { "path": "/api/v3/metrics" }
         }
     }],
     "outbounds": [{ "protocol": "freedom" }]
