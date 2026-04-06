@@ -1,44 +1,37 @@
 #!/bin/bash
 
-CYAN='\033[0;36m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
 PURPLE='\033[0;35m'
-BOLD='\033[1m'
 RESET='\033[0m'
 
 while true; do
     TIME=$(date '+%H:%M:%S')
 
     XRAY=$(pgrep -x xray)
-    CF=$(pgrep -x cf)
     WEB=$(pgrep -f http.server)
 
-    LINK=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf.log | head -n 1)
+    WEB_URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf_web.log | head -n 1)
+    NODE_URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf_node.log | head -n 1)
 
-    # ===== 状态绑定 =====
-    if [ -z "$XRAY" ] && [ -n "$WEB" ]; then
+    # 绑定控制
+    if [ -z "$XRAY" ]; then
         pkill -f http.server
     fi
 
-    if [ -n "$XRAY" ] && [ -z "$WEB" ]; then
-        nohup python3 -m http.server 8085 > web.log 2>&1 &
-    fi
-
-    # ===== UI =====
     clear
-    echo -e "${CYAN}${BOLD}"
-    echo "   NODE MONITOR PANEL"
-    echo -e "${RESET}"
+    echo -e "${CYAN}╔══════════════════════════════════╗${RESET}"
+    echo -e "${CYAN}║        NODE CONTROL PANEL        ║${RESET}"
+    echo -e "${CYAN}╚══════════════════════════════════╝${RESET}"
 
-    printf "TIME   : %s\n" "$TIME"
-    printf "XRAY   : %b\n" "${XRAY:+${GREEN}ONLINE${RESET}}${XRAY:-${RED}OFFLINE${RESET}}"
-    printf "TUNNEL : %b\n" "${CF:+${GREEN}ONLINE${RESET}}${CF:-${RED}OFFLINE${RESET}}"
-    printf "WEB    : %b\n" "${WEB:+${GREEN}ONLINE${RESET}}${WEB:-${RED}OFFLINE${RESET}}"
+    echo -e "TIME  : $TIME"
+    echo -e "XRAY  : ${XRAY:+${GREEN}ONLINE${RESET}}${XRAY:-${RED}OFFLINE${RESET}}"
+    echo -e "WEB   : ${WEB:+${GREEN}ONLINE${RESET}}${WEB:-${RED}OFFLINE${RESET}}"
 
     echo ""
-    echo -e "URL:"
-    echo -e "${PURPLE}${LINK:-Generating...}${RESET}"
+    echo -e "🌐 ${PURPLE}${WEB_URL}${RESET}"
+    echo -e "📡 ${PURPLE}${NODE_URL}/vbox${RESET}"
 
     sleep 5
 done
