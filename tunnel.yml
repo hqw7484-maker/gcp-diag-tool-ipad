@@ -1,0 +1,6 @@
+ingress:
+  - hostname: "*"
+    path: /vbox
+    service: http://127.0.0.1:8080
+  - hostname: "*"
+    service: http://127.0.0.1:8085
