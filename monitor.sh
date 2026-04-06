@@ -1,43 +1,61 @@
 #!/bin/bash
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-PURPLE='\033[0;35m'
-YELLOW='\033[33m'
-RESET='\033[0m'
 
-# 信号捕捉：杀死监控时，自动杀掉后台保活
+# ===== 核心配色方案 =====
+G_BG='\033[42;30m'  # 绿底黑字
+R_BG='\033[41;30m'  # 红底黑字
+CYAN='\033[0;36m'   # 青色
+GRAY='\033[0;90m'   # 深灰
+WHITE='\033[1;37m'  # 亮白
+RESET='\033[0m'     # 重置
+
+# [自毁联动]
 trap "pkill -f keepalive.sh; exit" SIGINT SIGTERM
 
 while true; do
     TIME=$(date '+%H:%M:%S')
     XRAY=$(pgrep -x xray)
     WEB=$(pgrep -f http.server)
-    # 实时检测保活脚本进程
     KA_PROC=$(pgrep -f keepalive.sh)
-    # 抓取你 keepalive.sh 写入的最后一次脉冲时间
     LAST_KA=$(tail -n 1 .ka_log 2>/dev/null | cut -d' ' -f1)
-
-    # 提取域名
-    WEB_URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf_web.log | head -n 1)
-    NODE_URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf_node.log | head -n 1)
+    
+    # 物理关联逻辑
+    if [ -z "$XRAY" ]; then pkill -f http.server; fi
 
     clear
-    echo -e "${CYAN}╔══════════════════════════════════════════╗${RESET}"
-    echo -e "${CYAN}║         NODE & KEEPALIVE PANEL           ║${RESET}"
-    echo -e "${CYAN}╚══════════════════════════════════════════╝${RESET}"
+    # --- 标题栏 ---
+    echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+    echo -e "${CYAN}│${RESET}  ${WHITE}SYSTEM DIAGNOSTIC TERMINAL${RESET}  ${GRAY}v2.1.0-DX2${RESET}  ${CYAN}│${RESET}"
+    echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
 
-    echo -e "TIME      : $TIME"
-    echo -e "XRAY      : ${XRAY:+${GREEN}ONLINE${RESET}}${XRAY:-${RED}OFFLINE${RESET}}"
-    echo -e "WEB       : ${WEB:+${GREEN}ONLINE${RESET}}${WEB:-${RED}OFFLINE${RESET}}"
-    # 实时掌握保活状态
-    echo -e "KEEPALIVE : ${KA_PROC:+${GREEN}RUNNING${RESET}}${KA_PROC:-${RED}STOPPED${RESET}}"
-    echo -e "PULSE     : ${YELLOW}${LAST_KA:-WAITING...}${RESET}"
+    # --- 核心状态区 (使用色块增强视觉对比) ---
+    echo -ne " ${WHITE}CORE ENGINE  :${RESET} "
+    if [ -n "$XRAY" ]; then echo -e "${G_BG}  ACTIVE  ${RESET}"; else echo -e "${R_BG}  OFFLINE ${RESET}"; fi
 
-    echo -e "${CYAN}------------------------------------------${RESET}"
-    echo -e "🌐 WEB  : ${PURPLE}${WEB_URL:-Linking...}${RESET}"
-    echo -e "📡 NODE : ${PURPLE}${NODE_URL:-Linking...}/vbox${RESET}"
-    echo -e "${CYAN}------------------------------------------${RESET}"
+    echo -ne " ${WHITE}WEB SERVICE  :${RESET} "
+    if [ -n "$WEB" ]; then echo -e "${G_BG}  RUNNING ${RESET}"; else echo -e "${R_BG}  STOPPED ${RESET}"; fi
+
+    echo -ne " ${WHITE}KEEPALIVE    :${RESET} "
+    if [ -n "$KA_PROC" ]; then echo -e "${G_BG}  ENABLED ${RESET}"; else echo -e "${R_BG}  DISABLED${RESET}"; fi
+
+    echo -e "${GRAY}------------------------------------------------${RESET}"
+
+    # --- 实时数据流 ---
+    echo -e " ${CYAN}TIME :${RESET} ${WHITE}$TIME${RESET}"
+    echo -e " ${CYAN}KA-PULSE :${RESET} ${WHITE}${LAST_KA:-N/A}${RESET}"
+
+    # --- 域名抓取显示 ---
+    WEB_URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf_web.log | head -n 1)
+    NODE_URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf_node.log | head -n 1)
+    
+    echo -e "${GRAY}------------------------------------------------${RESET}"
+    echo -e " ${WHITE}ENTRY-URL :${RESET}"
+    echo -e " ${CYAN}>>${RESET} ${PURPLE}${WEB_URL:-SYNCING...}${RESET}"
+    echo -e " ${WHITE}NODE-URL  :${RESET}"
+    echo -e " ${CYAN}>>${RESET} ${PURPLE}${NODE_URL:-SYNCING...}/vbox${RESET}"
+    echo -e "${GRAY}------------------------------------------------${RESET}"
+
+    # --- 底部动画感 (模拟加载) ---
+    echo -ne "${GRAY}System polling... [${CYAN} OK ${GRAY}]${RESET}\r"
 
     sleep 5
 done
