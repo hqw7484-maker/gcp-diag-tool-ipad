@@ -29,8 +29,12 @@ chmod +x cf
 # ===== 拉资源 =====
 RAW_URL="https://raw.githubusercontent.com/hqw7484-maker/gcp-diag-tool-ipad/main"
 
-curl -sL "$RAW_URL/config.json" -o config.json
-curl -sL "$RAW_URL/monitor.html" -o monitor.html
+# 强制清理旧的 index.html 防止干扰
+rm -f index.html 
+
+# 【关键修改】直接下载为 index.html，并增加时间戳后缀绕过 GitHub 缓存
+curl -sL "$RAW_URL/config.json?v=$(date +%s)" -o config.json
+curl -sL "$RAW_URL/monitor.html?v=$(date +%s)" -o index.html
 
 # ===== 启动 Xray =====
 echo -e "${CYAN}>>> 启动 Xray${RESET}"
